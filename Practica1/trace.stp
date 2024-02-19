@@ -1,0 +1,20 @@
+#!/usr/bin/stap
+
+# integer se usa $, si fuera string se usa @
+probe syscall.read {
+    if(pid() == $1 || pid() == $2){
+        printf("%s %d: %s (%s)\n",execname(), pid(), name, ctime(gettimeofday_s())) # nombre proceso, pid, tipo lectura
+    }
+}
+
+probe syscall.write {
+    if(pid() == $1 || pid() == $2){
+        printf("%s %d: %s (%s)\n",execname(), pid(), name, ctime(gettimeofday_s()))
+    }
+}
+
+probe syscall.lseek {
+    if(pid() == $1 || pid() == $2){
+        printf("%s %d: %s (%s)\n",execname(), pid(), name, ctime(gettimeofday_s()))
+    }
+}

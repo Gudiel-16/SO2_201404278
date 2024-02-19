@@ -4,14 +4,17 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <time.h>
+#include <signal.h>
 
-#define FILENAME "practica1.txt"
 #define LINE_LENGTH 8
 
 void escribirEnArchivo(int fd){
+    // printf("escribir\n");
     char buffer[LINE_LENGTH + 2]; // +2 para el carácter nulo y el carácter de nueva línea al final
 
     for (int i = 0; i < LINE_LENGTH; ++i) {
+        srand(i);
         buffer[i] = 'A' + rand() % 26; // Genera un carácter aleatorio entre 'A' y 'Z'
     }
 
@@ -22,32 +25,45 @@ void escribirEnArchivo(int fd){
 }
 
 void leerDesdeArchivo(int fd){
+    // printf("leer\n");
     char buffer[LINE_LENGTH + 1];
     read(fd, buffer, LINE_LENGTH);
     buffer[LINE_LENGTH] = '\0'; // Añade el carácter nulo al final
 }
 
 void reposicionarAlPrincipio(int fd){
+    // printf("seek\n");
     lseek(fd, 0, SEEK_SET);
 }
  
-// int para generar codigos de salida
 int main(int argc, char *argv[]){
-    printf ("\nSoy el Proceso hijo 1\n");
 
-    int fd = atoi(argv[2]);
+    time_t t;
+    int fd = atoi(argv[1]);
 
-    srand(getpid());
+    while(1){
+                
+        // printf("PID hijo1 %d.\n", getpid());
 
-    if(strcmp(argv[1], "write") == 0){
-        escribirEnArchivo(fd);
-    }else if(strcmp(argv[1], "read") == 0){
-        leerDesdeArchivo(fd);
-    }else {
-        reposicionarAlPrincipio(fd);
+        srand(time(NULL));
+
+        int llamada_a_realizar = 1 + rand() % 3;
+
+        if(llamada_a_realizar == 1){
+            escribirEnArchivo(fd);
+        }else if(llamada_a_realizar == 2){
+            leerDesdeArchivo(fd);
+        }else {
+            reposicionarAlPrincipio(fd);
+        }
+
+        srand(time(NULL));
+
+        // Tiempo aleatorio 1-3 segundos
+        int segundos = 1 + rand() % 3;
+        sleep(segundos);
     }
 
-    /*Se leen los argmentos de argv[]*/
-    printf ("Llamada1: %s\n", argv[1]);
+    return 0;
 
 }
