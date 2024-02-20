@@ -35,11 +35,17 @@ void reposicionarAlPrincipio(int fd){
     // printf("seek\n");
     lseek(fd, 0, SEEK_SET);
 }
+
+void manejador_sigint(){
+    exit(0);
+}
  
 int main(int argc, char *argv[]){
 
     time_t t;
     int fd = atoi(argv[1]);
+
+    // signal(SIGINT, manejador_sigint);
 
     while(1){
                 
