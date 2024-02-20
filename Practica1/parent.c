@@ -6,8 +6,11 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <time.h>
 
 int main(){
+
+    // srand(time(NULL));
 
     // archivo
     int fd = open("practica1.txt", O_RDWR | O_CREAT | O_TRUNC, 0777);

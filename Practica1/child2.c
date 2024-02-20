@@ -13,10 +13,10 @@ void escribirEnArchivo(int fd){
     // printf("escribir\n");
     char buffer[LINE_LENGTH + 2]; // +2 para el carácter nulo y el carácter de nueva línea al final
 
-    time_t t;
+    // time_t t;
+    // srand(20);
 
     for (int i = 0; i < LINE_LENGTH; ++i) {
-        srand(20);
         buffer[i] = 'A' + rand() % 26; // Genera un carácter aleatorio entre 'A' y 'Z'
     }
 
@@ -94,11 +94,13 @@ int main(int argc, char *argv[]){
 
     signal(SIGINT, manejador_sigint);
 
+    srand(time(NULL));
+
     while(1){
                 
         // printf("PID hijo2 %d.\n", getpid());
 
-        srand(time(NULL));
+        // srand(time(NULL));
 
         int llamada_a_realizar = 1 + rand() % 3;
 
