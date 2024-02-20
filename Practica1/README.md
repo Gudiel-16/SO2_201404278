@@ -111,8 +111,8 @@ void escribirEnArchivo(int fd){
 
 ```c
 void leerDesdeArchivo(int fd){
-    char buffer[LINE_LENGTH + 1];
-    read(fd, buffer, LINE_LENGTH);
+    char buffer[LINE_LENGTH + 2];
+    read(fd, buffer, LINE_LENGTH + 1);
     buffer[LINE_LENGTH] = '\0'; // Añade el carácter nulo al final
 }
 ```
