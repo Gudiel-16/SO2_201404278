@@ -26,8 +26,8 @@ void escribirEnArchivo(int fd){
 
 void leerDesdeArchivo(int fd){
     // printf("leer\n");
-    char buffer[LINE_LENGTH + 1];
-    read(fd, buffer, LINE_LENGTH);
+    char buffer[LINE_LENGTH + 2];
+    read(fd, buffer, LINE_LENGTH + 1);
     buffer[LINE_LENGTH] = '\0'; // Añade el carácter nulo al final
 }
 
