@@ -165,6 +165,8 @@ void generate_report_account_status(){
         }
     }
 
+    printf("\nREPORTE GENERADO EXITOSAMENTE!\n");
+
     fclose(fp);
 
 }
@@ -246,6 +248,77 @@ void make_a_withdrawal(){
 
         } else{
             printf("\nINGRESE UN MONTO VALIDO!\n");
+            while (getchar() != '\n'); // limpiando buffer de entrada
+            return;
+        }
+
+    } else{
+        printf("\nINGRESE UN NUMERO DE CUENTA VALIDO!\n");
+        while (getchar() != '\n'); // limpiando buffer de entrada
+        return;
+    }
+}
+
+void make_a_transaction(){
+    int n = AMOUNT_USERS;
+    int num_cuenta_a_retirar;
+    int num_cuenta_a_depositar;
+    double monto_a_depositar;
+
+    printf("\nIngrese el número de cuenta (de donde se va a retirar): ");
+    if(scanf("%d", &num_cuenta_a_retirar) == 1){
+
+        printf("\nIngrese el número de cuenta (a donde se hara el deposito): ");
+        if(scanf("%d", &num_cuenta_a_depositar) == 1){
+
+            printf("\nIngrese el monto a depositar: ");
+            if(scanf("%lf", &monto_a_depositar) == 1){
+
+                if(monto_a_depositar <= 0){
+                    printf("\nEL MONTO DEBE SER MAYOR A 0!\n");
+                    return;
+                }
+
+                if(num_cuenta_a_retirar == num_cuenta_a_depositar){
+                    printf("\nLA CUENTA DE RETIRO Y CUENTA DE DEPOSITO ES LA MISMA!\n");
+                    return;
+                }
+
+                for(int i = 0; i < n; i++){ // buscando cuenta de retiro
+                    if(all_users[i].flag_read == 1){
+                        if(all_users[i].no_cuenta == num_cuenta_a_retirar){
+
+                            for (int j = 0; j < n; j++){ // buscando cuenta a depositar
+                                if(all_users[j].flag_read == 1){
+                                    if(all_users[j].no_cuenta == num_cuenta_a_depositar){
+
+                                        if(all_users[i].saldo < monto_a_depositar){
+                                            printf("\nSALDO INSUFICIENTE PARA REALIZAR LA TRANSACCION!\n");
+                                            return;
+                                        }
+
+                                        all_users[i].saldo = all_users[i].saldo - monto_a_depositar;
+                                        all_users[j].saldo = all_users[j].saldo + monto_a_depositar;
+                                        printf("\nTRANSACCION REALIZADA CON EXITO!\n");
+                                        return;
+
+                                    }
+                                }
+                            }
+                        }
+                    }        
+                }
+
+                printf("\nNO EXISTE NUMERO DE CUENTA DE RETIRO O DE DEPOSITO!\n");
+
+            } else{
+                printf("\nINGRESE UN MONTO VALIDO!\n");
+                while (getchar() != '\n'); // limpiando buffer de entrada
+                return;
+            }
+
+        } else{
+            printf("\nINGRESE UN NUMERO DE CUENTA VALIDO!\n");
             while (getchar() != '\n'); // limpiando buffer de entrada
             return;
         }
@@ -432,19 +505,16 @@ void menu(){
                     make_a_withdrawal();
                     break;
                 case 3:
-                    printf("Opción: Transacción\n");
-                    // Agrega aquí el código para la opción Transacción
+                    make_a_transaction();
                     break;
                 case 4:
                     check_account();
                     break;
                 case 5:
                     printf("Opción: Carga masiva de operaciones\n");
-                    // Agrega aquí el código para la opción Carga masiva de operaciones
                     break;
                 case 6:
                     generate_report_account_status();
-                    printf("Reporte generado exitosamente!\n");
                     break;
                 case 7:
                     printf("\nSALIENDO DEL PROGRAMA. ¡HASTA LUEGO!\n");
