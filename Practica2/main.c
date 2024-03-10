@@ -88,11 +88,11 @@ bool validate_account_number(char *token){
     int valor = atoi(token);
 
     for(int i = 0; i < n; i++){
-        // if(all_users[i].flag_read == 1){
+        if(all_users[i].flag_read == 1){
             if(all_users[i].no_cuenta == valor){
                 return true;
             }
-        // }        
+        }        
     }
 
     return false;
@@ -167,6 +167,36 @@ void generate_report_account_status(){
 
     fclose(fp);
 
+}
+
+void check_account(){
+
+    int n = AMOUNT_USERS;
+    int num_cuenta_a_consultar;
+
+    printf("\nIngrese el número de cuenta: ");
+
+    if(scanf("%d", &num_cuenta_a_consultar) == 1){
+        
+        for(int i = 0; i < n; i++){
+            if(all_users[i].flag_read == 1){
+                if(all_users[i].no_cuenta == num_cuenta_a_consultar){
+                    printf("\nDATOS DE CUENTA:\n");
+                    printf("Numero de Cuenta: %d\nNombre: %s\nSaldo: %f\n", 
+                        all_users[i].no_cuenta, all_users[i].nombre, all_users[i].saldo);
+
+                    return;
+                }
+            }        
+        }
+
+    }else{
+        printf("\nINGRESE UN NUMERO DE CUENTA VALIDO!\n");
+        while (getchar() != '\n'); // limpiando buffer de entrada
+        return;
+    }
+
+    printf("\nNO EXISTE EL NUMERO DE CUENTA!\n");
 }
 
 void* thread_read_users(void* arg) 
@@ -287,7 +317,57 @@ void read_users(int count_total, int count_hilo1_y_2){
     
 }
 
+void menu(){
+    int opcion;
 
+    while (1) {  // Bucle infinito hasta que se elija "Salir"
+        // Mostrar el menú
+        printf("\n-------- Menú --------\n");
+        printf("1. Deposito\n");
+        printf("2. Retiro\n");
+        printf("3. Transacción\n");
+        printf("4. Consultar cuenta\n");
+        printf("5. Carga masiva de operaciones\n");
+        printf("6. Reporte estado de cuenta\n");
+        printf("7. Salir\n");
+
+        // Solicitar la selección de una opción al usuario
+        printf("Ingrese el número de la opción deseada: ");
+        scanf("%d", &opcion);
+
+        // Manejar la opción seleccionada
+        switch (opcion) {
+            case 1:
+                printf("Opción: Deposito\n");
+                // Agrega aquí el código para la opción Deposito
+                break;
+            case 2:
+                printf("Opción: Retiro\n");
+                // Agrega aquí el código para la opción Retiro
+                break;
+            case 3:
+                printf("Opción: Transacción\n");
+                // Agrega aquí el código para la opción Transacción
+                break;
+            case 4:
+                check_account();
+                break;
+            case 5:
+                printf("Opción: Carga masiva de operaciones\n");
+                // Agrega aquí el código para la opción Carga masiva de operaciones
+                break;
+            case 6:
+                generate_report_account_status();
+                printf("Reporte generado exitosamente!\n");
+                break;
+            case 7:
+                printf("\nSALIENDO DEL PROGRAMA. ¡HASTA LUEGO!\n");
+                return;  // Salir del programa
+            default:
+                printf("Opción no válida. Por favor, elija una opción válida.\n");
+        }
+    }
+}
 
 int main(){
 
@@ -304,8 +384,9 @@ int main(){
     // printf("Cantidad3: %d\n\n", count_hilo_three);
 
     read_users(count_total, count_hilo_one_and_two);
-    generate_report_users();
-    generate_report_account_status();
+    // generate_report_users();
+    // generate_report_account_status();
+    menu();
 
     return 0;
 }
