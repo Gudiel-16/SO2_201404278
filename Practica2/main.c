@@ -8,6 +8,9 @@
 #include <sys/stat.h>
 #include <time.h>
 
+#define NAME_FILE_USERS "usuarios.csv"
+#define NAME_FILE_ACCOUNT_STATUS "estado_de_cuenta.csv"
+
 // cantidad de usuarios y errores que se pueden cargar
 #define AMOUNT_USERS 100
 
@@ -56,7 +59,7 @@ struct data_users_errors errors_load_users[AMOUNT_USERS];
 int count_users(){
 
     FILE *fp;
-    fp = fopen("usuarios.csv", "r"); // permisos de lectura
+    fp = fopen(NAME_FILE_USERS, "r"); // permisos de lectura
 
     char row[1000]; // buffer de linea
 
@@ -149,6 +152,23 @@ void generate_report_users(){
     fclose(fp);
 }
 
+void generate_report_account_status(){
+    FILE *fp;
+    fp = fopen(NAME_FILE_ACCOUNT_STATUS, "w");
+
+    fprintf(fp, "no_cuenta,nombre,saldo\n");
+
+    int n = AMOUNT_USERS;
+    for(int i = 0; i < n; i++){
+        if(all_users[i].flag_read == 1){
+            fprintf(fp, "%d,%s,%f\n", all_users[i].no_cuenta, all_users[i].nombre, all_users[i].saldo);
+        }
+    }
+
+    fclose(fp);
+
+}
+
 void* thread_read_users(void* arg) 
 { 
     //wait, bloquea todo lo que le sigue (algo como todos los procesos que le siguen), hasta que el mismo proceso lo libere
@@ -226,7 +246,7 @@ void read_users(int count_total, int count_hilo1_y_2){
     pthread_mutex_init(&lock, NULL);  // Inicializamos nuestro mutex
 
     FILE *fp;
-    fp = fopen("usuarios.csv", "r"); // permisos de lectura
+    fp = fopen(NAME_FILE_USERS, "r"); // permisos de lectura
 
     pthread_t t1,t2,t3;
 
@@ -276,7 +296,7 @@ int main(){
 
     // usuarios por hilo
     int count_hilo_one_and_two = count_total / 3;
-    int count_hilo_three = count_total - (count_hilo_one_and_two * 2);
+    // int count_hilo_three = count_total - (count_hilo_one_and_two * 2);
 
     // printf("Cantidad: %d\n\n", count_total);
     // printf("Cantidad1: %d\n\n", count_hilo_one_and_two);
@@ -285,12 +305,7 @@ int main(){
 
     read_users(count_total, count_hilo_one_and_two);
     generate_report_users();
-
-    // int n = 100;
-    // for(int i = 0; i < n; i++){
-    //     printf("No_cuenta: %d   Nombre: %s   Saldo: %f   \n", 
-    //         all_users[i].no_cuenta, all_users[i].nombre, all_users[i].saldo);
-    // }
+    generate_report_account_status();
 
     return 0;
 }
