@@ -169,6 +169,47 @@ void generate_report_account_status(){
 
 }
 
+void make_a_deposit(){
+    int n = AMOUNT_USERS;
+    int num_cuenta_a_depositar;
+    int monto_a_depositar;
+
+    printf("\nIngrese el número de cuenta: ");
+    if(scanf("%d", &num_cuenta_a_depositar) == 1){
+
+        printf("\nIngrese el monto a depositar: ");
+        if(scanf("%d", &monto_a_depositar) == 1){
+
+            if(monto_a_depositar <= 0){
+                printf("\nEL MONTO DEBE SER MAYOR A 0!\n");
+                return;
+            }
+
+            for(int i = 0; i < n; i++){
+                if(all_users[i].flag_read == 1){
+                    if(all_users[i].no_cuenta == num_cuenta_a_depositar){
+                        all_users[i].saldo = all_users[i].saldo + monto_a_depositar;
+                        printf("\nDEPOSITO REALIZADO CON EXITO!\n");
+                        return;
+                    }
+                }        
+            }
+
+            printf("\nNO EXISTE EL NUMERO DE CUENTA!\n");
+
+        } else{
+            printf("\nINGRESE UN MONTO VALIDO!\n");
+            while (getchar() != '\n'); // limpiando buffer de entrada
+            return;
+        }
+
+    } else{
+        printf("\nINGRESE UN NUMERO DE CUENTA VALIDO!\n");
+        while (getchar() != '\n'); // limpiando buffer de entrada
+        return;
+    }
+}
+
 void check_account(){
 
     int n = AMOUNT_USERS;
@@ -333,39 +374,44 @@ void menu(){
 
         // Solicitar la selección de una opción al usuario
         printf("Ingrese el número de la opción deseada: ");
-        scanf("%d", &opcion);
+        if(scanf("%d", &opcion) == 1){
 
-        // Manejar la opción seleccionada
-        switch (opcion) {
-            case 1:
-                printf("Opción: Deposito\n");
-                // Agrega aquí el código para la opción Deposito
-                break;
-            case 2:
-                printf("Opción: Retiro\n");
-                // Agrega aquí el código para la opción Retiro
-                break;
-            case 3:
-                printf("Opción: Transacción\n");
-                // Agrega aquí el código para la opción Transacción
-                break;
-            case 4:
-                check_account();
-                break;
-            case 5:
-                printf("Opción: Carga masiva de operaciones\n");
-                // Agrega aquí el código para la opción Carga masiva de operaciones
-                break;
-            case 6:
-                generate_report_account_status();
-                printf("Reporte generado exitosamente!\n");
-                break;
-            case 7:
-                printf("\nSALIENDO DEL PROGRAMA. ¡HASTA LUEGO!\n");
-                return;  // Salir del programa
-            default:
-                printf("Opción no válida. Por favor, elija una opción válida.\n");
+            // Manejar la opción seleccionada
+            switch (opcion) {
+                case 1:
+                    make_a_deposit();
+                    break;
+                case 2:
+                    printf("Opción: Retiro\n");
+                    // Agrega aquí el código para la opción Retiro
+                    break;
+                case 3:
+                    printf("Opción: Transacción\n");
+                    // Agrega aquí el código para la opción Transacción
+                    break;
+                case 4:
+                    check_account();
+                    break;
+                case 5:
+                    printf("Opción: Carga masiva de operaciones\n");
+                    // Agrega aquí el código para la opción Carga masiva de operaciones
+                    break;
+                case 6:
+                    generate_report_account_status();
+                    printf("Reporte generado exitosamente!\n");
+                    break;
+                case 7:
+                    printf("\nSALIENDO DEL PROGRAMA. ¡HASTA LUEGO!\n");
+                    return;  // Salir del programa
+                default:
+                    printf("\nOPCION NO VALIDA.\n");
+            }
+
+        }else{
+            printf("\nOPCION NO VALIDA!\n");
+            while (getchar() != '\n'); // limpiando buffer de entrada   
         }
+
     }
 }
 
