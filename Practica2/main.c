@@ -7,17 +7,32 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <ctype.h>
 
 #define NAME_FILE_USERS "usuarios.csv"
+#define NAME_FILE_OPERATIONS "operaciones.csv"
 #define NAME_FILE_ACCOUNT_STATUS "estado_de_cuenta.csv"
 
 // cantidad de usuarios y errores que se pueden cargar
 #define AMOUNT_USERS 100
 
-pthread_mutex_t lock;
+// cantidad de operaciones y errores que se pueden cargar
+#define AMOUNT_OPERATIONS 100
+
+pthread_mutex_t lock; // para usuarios
+pthread_mutex_t lock_op;
 
 // para leer el archivo de usuarios
 struct args_struct_read_users {
+    FILE *file;
+    int start_line;
+    int end_line;
+    char* name_hilo;
+    int number_hilo;
+};
+
+// para leer el archivo de operaciones
+struct args_struct_read_operations {
     FILE *file;
     int start_line;
     int end_line;
@@ -41,8 +56,27 @@ struct data_users_loaded{
     int total_hilos;
 };
 
+// operaciones cargados por hilo
+struct data_operations_loaded{
+    int count_retiros;
+    int count_depositos;
+    int count_transacciones;
+    int count_total_operaciones;
+    int count_hilo1;
+    int count_hilo2;
+    int count_hilo3;
+    int count_hilo4;
+    int total_hilos;
+};
+
 // Errores en carga de usuarios
 struct data_users_errors{
+    int flag_read; // 1 = no esta vacio y poner en reporte, 0 = ignorar
+    char error_tipo[100];
+};
+
+// Errores en carga de operaciones
+struct data_operations_errors{
     int flag_read; // 1 = no esta vacio y poner en reporte, 0 = ignorar
     char error_tipo[100];
 };
@@ -53,8 +87,14 @@ struct data_users all_users[AMOUNT_USERS];
 // Almacenar el conteo por hilo
 struct data_users_loaded count_users_loaded_per_hilo[1];
 
+// Almacenar el conteo por hilo
+struct data_operations_loaded count_operations_loaded_per_hilo[1];
+
 // Almacenar errores carga de usuarios
 struct data_users_errors errors_load_users[AMOUNT_USERS];
+
+// Almacenar errores carga de operaciones
+struct data_operations_errors errors_load_operations[AMOUNT_OPERATIONS];
 
 int count_users(){
 
@@ -80,6 +120,66 @@ int count_users(){
 
     return n;
 
+}
+
+int count_operations(){
+
+    FILE *fp;
+    fp = fopen(NAME_FILE_OPERATIONS, "r"); // permisos de lectura
+
+    char row[1000]; // buffer de linea
+
+    // mueve el puntero a cada inicio de linea
+    fgets(row, 1000, fp); // permite leer linea por linea un archivo
+
+    int n = 0;
+
+    // feof es para saber cuando llegamos al final del archivo
+    while (feof(fp) != true)
+    {
+        fgets(row, 1000, fp); // ya tenemos la primera linea
+
+        n++;
+    }
+
+    fclose(fp);
+
+    return n;
+
+}
+
+bool validate_only_number(char *token){
+
+    while (*token != '\0') {
+        // Verifica si el carácter actual no es un dígito
+        if (!isdigit(*token)) {
+            return true; // Si hay algún carácter que no es un dígito, no es un número entero
+        }
+        token++; // Mueve el puntero al siguiente carácter
+    }
+
+    return false;
+}
+
+bool validate_monto(char *token){
+
+    while (*token != '\0') {
+        // Verifica si el carácter actual no es un dígito
+        if (!isdigit(*token) && *token != '.') {
+
+            return true; // Si hay algún carácter que no es un dígito, o no es punto
+
+        }
+        token++; // Mueve el puntero al siguiente carácter
+    }
+
+    double valor = strtod(token, NULL);
+
+    if(valor < 0){
+        return true;
+    }
+
+    return false;
 }
 
 bool validate_account_number(char *token){
@@ -108,6 +208,23 @@ bool validate_integer_positive_whole(char *token){
     }
 
     if(valor < 0){
+        return true;
+    }
+
+    return false;
+}
+
+bool validate_integer_positive_whole_type_operations(char *token){
+
+    // validando que solo tenga numeros
+    if(validate_only_number(token)){
+        return true;
+    }
+
+    // validando que sea tipo de operacion 1, 2 o 3
+    int valor = strtod(token, NULL);
+
+    if(valor < 1 || valor > 3){
         return true;
     }
 
@@ -169,6 +286,51 @@ void generate_report_account_status(){
 
     fclose(fp);
 
+}
+
+void generate_report_operations(){
+    time_t rawtime;
+    struct tm *timeinfo;
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    // Formatear el nombre del archivo
+    char nombreArchivo[100];
+    char fechaActual[100];
+    strftime(nombreArchivo, sizeof(nombreArchivo), "operaciones_%Y_%m_%d-%H_%M_%S.log", timeinfo);
+    strftime(fechaActual, sizeof(fechaActual), "%Y-%m-%d %H:%M:%S", timeinfo);
+
+    FILE *fp;
+    fp = fopen(nombreArchivo, "w");
+
+    fprintf(fp, "------------- RESUMEN DE OPERACIONES -------------\n\n");
+
+    fprintf(fp, "FECHA: ");
+    fprintf(fp, "%s\n\n", fechaActual);
+
+    fprintf(fp, "OPERACIONES REALIZADAS:\n");
+    fprintf(fp, "Retiros: %d\n", count_operations_loaded_per_hilo[0].count_retiros);
+    fprintf(fp, "Depositos: %d\n", count_operations_loaded_per_hilo[0].count_depositos);
+    fprintf(fp, "Transacciones: %d\n", count_operations_loaded_per_hilo[0].count_transacciones);
+    fprintf(fp, "Total: %d\n\n", count_operations_loaded_per_hilo[0].count_total_operaciones);
+
+    fprintf(fp, "OPERACIONES POR HILO:\n");
+    fprintf(fp, "Hilo #1: %d\n", count_operations_loaded_per_hilo[0].count_hilo1);
+    fprintf(fp, "Hilo #2: %d\n", count_operations_loaded_per_hilo[0].count_hilo2);
+    fprintf(fp, "Hilo #3: %d\n", count_operations_loaded_per_hilo[0].count_hilo3);
+    fprintf(fp, "Hilo #4: %d\n", count_operations_loaded_per_hilo[0].count_hilo4);
+    fprintf(fp, "Total: %d\n\n", count_operations_loaded_per_hilo[0].total_hilos);
+
+    fprintf(fp, "ERRORES:\n");
+
+    int n = AMOUNT_OPERATIONS;
+    for(int i = 0; i < n; i++){
+        if(errors_load_operations[i].flag_read == 1){
+            fprintf(fp, "%s", errors_load_operations[i].error_tipo);
+        }
+    }
+
+    fclose(fp);
 }
 
 void make_a_deposit(){
@@ -432,6 +594,124 @@ void* thread_read_users(void* arg)
     pthread_mutex_unlock(&lock); // se libere, y se ejecuta el siguiente hilo
 } 
 
+void* thread_read_operations(void* arg){
+    //wait, bloquea todo lo que le sigue (algo como todos los procesos que le siguen), hasta que el mismo proceso lo libere
+    pthread_mutex_lock(&lock_op);
+
+    struct args_struct_read_operations *hilo_current = (struct args_struct_read_operations*)arg;
+    char row[1000]; // buffer de linea
+    char *type_operation; // no se sabe cuantos caracteres, sera puntero de caracteres
+    char *cuenta1;
+    char *cuenta2;
+    char *monto;
+    int len_monto;
+
+    // printf("-----------------------Inicio - %s\n", hilo_current->name_hilo); 
+
+    // puntero al inicio
+    fseek(hilo_current->file, 0, SEEK_SET);
+
+    // recorremos hasta la linea que le toca
+    for (int i = 0; i <= hilo_current->start_line; i++)
+    {
+        fgets(row, 1000, hilo_current->file); // permite leer linea por linea un archivo
+    }
+
+    int n = hilo_current->start_line;
+    while (n <= hilo_current->end_line && feof(hilo_current->file) != true){
+        fgets(row, 1000, hilo_current->file); // ya tenemos la primera linea
+
+        type_operation = strtok(row, ","); // permite leer una cadena hasta cierto caracter
+        cuenta1 = strtok(NULL, ","); // null permite leer desde el punto donde se quedo anterior
+        cuenta2 = strtok(NULL, ",");
+        monto = strtok(NULL, ",");
+
+        if(validate_integer_positive_whole_type_operations(type_operation)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Operacion no valida -> %s\n", (n+2), type_operation);
+            n++;
+            continue;
+        }
+
+        if(validate_only_number(cuenta1)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta1);
+            n++;
+            continue;
+        }
+
+        if(validate_only_number(cuenta2)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta2);
+            n++;
+            continue;
+        }
+
+        if(!validate_account_number(cuenta1)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta1);
+            n++;
+            continue;
+        }
+
+        if(!validate_account_number(cuenta2)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta2);
+            n++;
+            continue;
+        }
+
+        // para validar el monto, en vez de salto de linea al final se pone un valor null, si no toma todos los valores como incorrectos
+        len_monto = strlen(monto);
+        if (monto[len_monto - 1] == '\n') {
+            monto[len_monto - 1] = '\0'; // Reemplazar el salto de línea por el caracter nulo
+        }
+
+        if(validate_monto(monto)){
+            errors_load_operations[n].flag_read = 1;
+            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Monto no es un numero o es menor a 0 -> %s\n", (n+2), monto);
+            n++;
+            continue;
+        }
+
+        if(atoi(type_operation) == 1){ // deposito
+
+            count_operations_loaded_per_hilo[0].count_depositos++;
+
+        }else if(atoi(type_operation) ==2){ // retiro
+
+            count_operations_loaded_per_hilo[0].count_retiros++;
+
+        }else{ // transaccion
+
+            count_operations_loaded_per_hilo[0].count_transacciones++;
+
+        }
+
+        // aumenta el conteo segun hilo que se esta ejecutando
+        if(hilo_current->number_hilo == 1){
+            count_operations_loaded_per_hilo[0].count_hilo1++;
+        } else if(hilo_current->number_hilo == 2){
+            count_operations_loaded_per_hilo[0].count_hilo2++;
+        } else if(hilo_current->number_hilo == 3){
+            count_operations_loaded_per_hilo[0].count_hilo3++;
+        } else{
+            count_operations_loaded_per_hilo[0].count_hilo4++;
+        }
+
+        count_operations_loaded_per_hilo[0].count_total_operaciones++;
+        count_operations_loaded_per_hilo[0].total_hilos++;
+        n++;
+    }    
+  
+    // sleep(1); 
+      
+    //signal 
+    // printf("-----------------------Termino - %s\n", hilo_current->name_hilo); 
+
+    pthread_mutex_unlock(&lock_op); // se libere, y se ejecuta el siguiente hilo
+}
+
 void read_users(int count_total, int count_hilo1_y_2){
 
     pthread_mutex_init(&lock, NULL);  // Inicializamos nuestro mutex
@@ -478,6 +758,66 @@ void read_users(int count_total, int count_hilo1_y_2){
     
 }
 
+void read_operations(){
+    int count_total = count_operations();
+    
+    // usuarios por hilo
+    int count_hilo_1_2_and_3 = count_total / 4;
+    int count_hilo_4 = count_total - (count_hilo_1_2_and_3 * 3);
+
+    // printf("Cantidad: %d\n\n", count_total);
+    // printf("Cantidad1-2-3: %d\n\n", count_hilo_1_2_and_3);
+    // printf("Cantidad4: %d\n\n", count_hilo_4);
+
+    pthread_mutex_init(&lock_op, NULL);  // Inicializamos nuestro mutex
+
+    FILE *fp;
+    fp = fopen(NAME_FILE_OPERATIONS, "r"); // permisos de lectura
+
+    pthread_t t1,t2,t3,t4;
+
+    struct args_struct_read_operations args_hilo1;
+    args_hilo1.file = fp;
+    args_hilo1.start_line = 0;
+    args_hilo1.end_line = count_hilo_1_2_and_3 - 1;
+    args_hilo1.name_hilo = "Hilo1";
+    args_hilo1.number_hilo = 1;
+    pthread_create(&t1, NULL, thread_read_operations, (void *)&args_hilo1); 
+
+    struct args_struct_read_operations args_hilo2;
+    args_hilo2.file = fp;
+    args_hilo2.start_line = count_hilo_1_2_and_3;
+    args_hilo2.end_line = (count_hilo_1_2_and_3 * 2) - 1 ;
+    args_hilo2.name_hilo = "Hilo2";
+    args_hilo2.number_hilo = 2;
+    pthread_create(&t2, NULL, thread_read_operations, (void *)&args_hilo2); 
+
+    struct args_struct_read_operations args_hilo3;
+    args_hilo3.file = fp;
+    args_hilo3.start_line = (count_hilo_1_2_and_3 * 2);
+    args_hilo3.end_line = (count_hilo_1_2_and_3 * 3) - 1 ;
+    args_hilo3.name_hilo = "Hilo3";
+    args_hilo3.number_hilo = 3;
+    pthread_create(&t3, NULL, thread_read_operations, (void *)&args_hilo3); 
+
+    struct args_struct_read_operations args_hilo4;
+    args_hilo4.file = fp;
+    args_hilo4.start_line = (count_hilo_1_2_and_3 * 3);
+    args_hilo4.end_line = count_total - 1;
+    args_hilo4.name_hilo = "Hilo4";
+    args_hilo4.number_hilo = 4;
+    pthread_create(&t4, NULL, thread_read_operations, (void *)&args_hilo4); 
+
+    pthread_join(t1,NULL); 
+    pthread_join(t2,NULL); 
+    pthread_join(t3,NULL);
+    pthread_join(t4,NULL); 
+
+    fclose(fp);
+    pthread_mutex_destroy(&lock_op);  // Liberamos los recursos del semaforo
+
+}
+
 void menu(){
     int opcion;
 
@@ -511,7 +851,8 @@ void menu(){
                     check_account();
                     break;
                 case 5:
-                    printf("Opción: Carga masiva de operaciones\n");
+                    read_operations();
+                    generate_report_operations();
                     break;
                 case 6:
                     generate_report_account_status();
