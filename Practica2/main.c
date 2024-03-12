@@ -733,6 +733,16 @@ void* thread_read_operations(void* arg){
                 continue;
             }
 
+            // realizar deposito
+            for(int i = 0; i < AMOUNT_USERS; i++){
+                if(all_users[i].flag_read == 1){
+                    if(all_users[i].no_cuenta == atoi(cuenta1)){
+                        all_users[i].saldo = all_users[i].saldo + strtod(monto, NULL);
+                    }
+                }        
+            }
+
+
             count_operations_loaded_per_hilo[0].count_depositos++;
 
         } else if(atoi(type_operation) == 2){ // retiro
@@ -742,6 +752,30 @@ void* thread_read_operations(void* arg){
                 continue;
             }
 
+            // realizar retiro
+            bool flag_saldo_insuficiente = false;
+            for(int i = 0; i < AMOUNT_USERS; i++){
+                if(all_users[i].flag_read == 1){
+                    if(all_users[i].no_cuenta == atoi(cuenta1)){
+
+                        if(all_users[i].saldo < strtod(monto, NULL)){
+                            errors_load_operations[n].flag_read = 1;
+                            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Saldo insuficiente para realizar el retiro -> ( %f < %s )\n", (n+2), all_users[i].saldo, monto);
+                            flag_saldo_insuficiente = true;
+                            n++;
+                            break;
+                        }
+
+                        all_users[i].saldo = all_users[i].saldo - strtod(monto, NULL);
+                        break;
+
+                    }
+                }        
+            }
+
+            // Si no hay saldo, pasa al siguiente
+            if(flag_saldo_insuficiente) { continue; }
+
             count_operations_loaded_per_hilo[0].count_retiros++;
 
         } else{ // transaccion
@@ -750,6 +784,37 @@ void* thread_read_operations(void* arg){
                 n++;
                 continue;
             }
+
+            bool flag_saldo_insuficiente = false;
+            for(int i = 0; i < n; i++){ // buscando cuenta de retiro
+                if(all_users[i].flag_read == 1){
+                    if(all_users[i].no_cuenta == atoi(cuenta1)){
+
+                        if(all_users[i].saldo < strtod(monto, NULL)){
+                            errors_load_operations[n].flag_read = 1;
+                            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Saldo insuficiente para realizar la transaccion -> ( %f < %s )\n", (n+2), all_users[i].saldo, monto);
+                            flag_saldo_insuficiente = true;
+                            n++;
+                            break;
+                        }
+
+                        for (int j = 0; j < n; j++){ // buscando cuenta a depositar
+                            if(all_users[j].flag_read == 1){
+                                if(all_users[j].no_cuenta == atoi(cuenta2)){
+
+                                    all_users[i].saldo = all_users[i].saldo - strtod(monto, NULL);
+                                    all_users[j].saldo = all_users[j].saldo + strtod(monto, NULL);
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                }        
+            }
+
+            // Si no hay saldo, pasa al siguiente
+            if(flag_saldo_insuficiente) { continue; }
 
             count_operations_loaded_per_hilo[0].count_transacciones++;
 
