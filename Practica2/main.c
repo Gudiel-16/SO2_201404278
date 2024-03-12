@@ -786,7 +786,7 @@ void* thread_read_operations(void* arg){
             }
 
             bool flag_saldo_insuficiente = false;
-            for(int i = 0; i < n; i++){ // buscando cuenta de retiro
+            for(int i = 0; i < AMOUNT_USERS; i++){ // buscando cuenta de retiro
                 if(all_users[i].flag_read == 1){
                     if(all_users[i].no_cuenta == atoi(cuenta1)){
 
@@ -798,7 +798,7 @@ void* thread_read_operations(void* arg){
                             break;
                         }
 
-                        for (int j = 0; j < n; j++){ // buscando cuenta a depositar
+                        for (int j = 0; j < AMOUNT_USERS; j++){ // buscando cuenta a depositar
                             if(all_users[j].flag_read == 1){
                                 if(all_users[j].no_cuenta == atoi(cuenta2)){
 
