@@ -9,15 +9,15 @@
 #include <time.h>
 #include <ctype.h>
 
-#define NAME_FILE_USERS "usuarios.csv"
-#define NAME_FILE_OPERATIONS "operaciones.csv"
+#define NAME_FILE_USERS "prueba_usuarios.csv"
+#define NAME_FILE_OPERATIONS "prueba_transacciones.csv"
 #define NAME_FILE_ACCOUNT_STATUS "estado_de_cuenta.csv"
 
 // cantidad de usuarios y errores que se pueden cargar
-#define AMOUNT_USERS 100
+#define AMOUNT_USERS 300
 
 // cantidad de operaciones y errores que se pueden cargar
-#define AMOUNT_OPERATIONS 100
+#define AMOUNT_OPERATIONS 300
 
 pthread_mutex_t lock; // para usuarios
 pthread_mutex_t lock_op;
@@ -198,14 +198,19 @@ bool validate_account_number(char *token){
     return false;
 }
 
-bool validate_integer_positive_whole(char *token){
+bool validate_saldo(char *token){
+
+    while (*token != '\0') {
+        // Verifica si el carácter actual no es un dígito
+        if (!isdigit(*token) && *token != '.') {
+
+            return true; // Si hay algún carácter que no es un dígito, o no es punto
+
+        }
+        token++; // Mueve el puntero al siguiente carácter
+    }
 
     double valor = strtod(token, NULL);
-    char *punto = strchr(token, '.');
-
-    if(punto != NULL){
-        return true; // si contiene punto, es decimal
-    }
 
     if(valor < 0){
         return true;
@@ -529,7 +534,10 @@ void* thread_read_users(void* arg)
 
     struct args_struct_read_users *hilo_current = (struct args_struct_read_users*)arg;
     char row[1000]; // buffer de linea
-    char *token; // no se sabe cuantos caracteres, sera puntero de caracteres
+    char *cuenta; // no se sabe cuantos caracteres, sera puntero de caracteres
+    char *nombre;
+    char *saldo;
+    int len_saldo;
 
     // printf("-----------------------Inicio - %s\n", hilo_current->name_hilo); 
 
@@ -546,30 +554,45 @@ void* thread_read_users(void* arg)
     while (n <= hilo_current->end_line && feof(hilo_current->file) != true){
         fgets(row, 1000, hilo_current->file); // ya tenemos la primera linea
 
-        token = strtok(row, ","); // permite leer una cadena hasta cierto caracter
+        cuenta = strtok(row, ","); // permite leer una cadena hasta cierto caracter
+        nombre = strtok(NULL, ","); // null permite leer desde el punto donde se quedo anterior
+        saldo = strtok(NULL, ",");
 
-        if(validate_integer_positive_whole(token)){
+        if(validate_only_number(cuenta)){
             errors_load_users[n].flag_read = 1;
-            sprintf(errors_load_users[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo -> %s\n", (n+2), token);
+            sprintf(errors_load_users[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo -> %s\n", (n+2), cuenta);
             n++;
             continue;
         }
 
-        if(validate_account_number(token)){
+        if(validate_account_number(cuenta)){
             errors_load_users[n].flag_read = 1;
-            sprintf(errors_load_users[n].error_tipo, "    - Linea #%d: Numeros de cuenta duplicados -> %s\n", (n+2), token);
+            sprintf(errors_load_users[n].error_tipo, "    - Linea #%d: Numeros de cuenta duplicados -> %s\n", (n+2), cuenta);
             n++;
             continue;
         }
 
-        all_users[n].no_cuenta = atoi(token);
+        // para validar el saldo, en vez de salto de linea al final se pone un valor null, si no toma todos los valores como incorrectos
+        len_saldo = strlen(saldo);
+        if (saldo[len_saldo - 1] == '\n') {
+            saldo[len_saldo - 1] = '\0'; // Reemplazar el salto de línea por el caracter nulo
+        }
 
-        token = strtok(NULL, ","); // null permite leer desde el punto donde se quedo anterior
+        // printf("%s\n", saldo);
+
+        if(validate_saldo(saldo)){
+            errors_load_users[n].flag_read = 1;
+            sprintf(errors_load_users[n].error_tipo, "    - Linea #%d: Saldo no es numero o es menor a cero -> %s\n", (n+2), saldo);
+            n++;
+            continue;
+        }
+
+        all_users[n].no_cuenta = atoi(cuenta);
+
         // printf("Nombre: %s  \n", token);
-        sprintf(all_users[n].nombre, "%s", token); // copiar cadena
+        sprintf(all_users[n].nombre, "%s", nombre); // copiar cadena
 
-        token = strtok(NULL, ",");
-        all_users[n].saldo = strtod(token, NULL); // convierte a double
+        all_users[n].saldo = strtod(saldo, NULL); // convierte a double
 
         all_users[n].flag_read = 1;
 
