@@ -236,6 +236,76 @@ bool validate_integer_positive_whole_type_operations(char *token){
     return false;
 }
 
+bool validate_transaccion(char *cuenta1, char *cuenta2, char *monto, int n){
+
+    if(validate_only_number(cuenta1)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta1);
+        return true;
+    }
+
+    if(validate_only_number(cuenta2)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta2);
+        return true;
+    }
+
+    if(!validate_account_number(cuenta1)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta1);
+        return true;
+    }
+
+    if(!validate_account_number(cuenta2)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta2);
+        return true;
+    }
+
+    // para validar el monto, en vez de salto de linea al final se pone un valor null, si no toma todos los valores como incorrectos
+    int len_monto = strlen(monto);
+    if (monto[len_monto - 1] == '\n') {
+        monto[len_monto - 1] = '\0'; // Reemplazar el salto de línea por el caracter nulo
+    }
+
+    if(validate_monto(monto)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Monto no es un numero o es menor a 0 -> %s\n", (n+2), monto);
+        return true;
+    }
+
+    return false;
+}
+
+bool validate_deposito_o_retiro(char *cuenta1, char *monto, int n){
+
+    if(validate_only_number(cuenta1)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta1);
+        return true;
+    }
+
+    if(!validate_account_number(cuenta1)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta1);
+        return true;
+    }
+
+    // para validar el monto, en vez de salto de linea al final se pone un valor null, si no toma todos los valores como incorrectos
+    int len_monto = strlen(monto);
+    if (monto[len_monto - 1] == '\n') {
+        monto[len_monto - 1] = '\0'; // Reemplazar el salto de línea por el caracter nulo
+    }
+
+    if(validate_monto(monto)){
+        errors_load_operations[n].flag_read = 1;
+        sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Monto no es un numero o es menor a 0 -> %s\n", (n+2), monto);
+        return true;
+    }
+
+    return false;
+}
+
 void generate_report_users(){
     time_t rawtime;
     struct tm *timeinfo;
@@ -656,56 +726,30 @@ void* thread_read_operations(void* arg){
             continue;
         }
 
-        if(validate_only_number(cuenta1)){
-            errors_load_operations[n].flag_read = 1;
-            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta1);
-            n++;
-            continue;
-        }
-
-        if(validate_only_number(cuenta2)){
-            errors_load_operations[n].flag_read = 1;
-            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no es un numero entero positivo   -> %s\n", (n+2), cuenta2);
-            n++;
-            continue;
-        }
-
-        if(!validate_account_number(cuenta1)){
-            errors_load_operations[n].flag_read = 1;
-            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta1);
-            n++;
-            continue;
-        }
-
-        if(!validate_account_number(cuenta2)){
-            errors_load_operations[n].flag_read = 1;
-            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Numero de cuenta no existe -> %s\n", (n+2), cuenta2);
-            n++;
-            continue;
-        }
-
-        // para validar el monto, en vez de salto de linea al final se pone un valor null, si no toma todos los valores como incorrectos
-        len_monto = strlen(monto);
-        if (monto[len_monto - 1] == '\n') {
-            monto[len_monto - 1] = '\0'; // Reemplazar el salto de línea por el caracter nulo
-        }
-
-        if(validate_monto(monto)){
-            errors_load_operations[n].flag_read = 1;
-            sprintf(errors_load_operations[n].error_tipo, "    - Linea #%d: Monto no es un numero o es menor a 0 -> %s\n", (n+2), monto);
-            n++;
-            continue;
-        }
-
         if(atoi(type_operation) == 1){ // deposito
+
+            if(validate_deposito_o_retiro(cuenta1, monto, n)){
+                n++;
+                continue;
+            }
 
             count_operations_loaded_per_hilo[0].count_depositos++;
 
-        }else if(atoi(type_operation) ==2){ // retiro
+        } else if(atoi(type_operation) == 2){ // retiro
+
+            if(validate_deposito_o_retiro(cuenta1, monto, n)){
+                n++;
+                continue;
+            }
 
             count_operations_loaded_per_hilo[0].count_retiros++;
 
-        }else{ // transaccion
+        } else{ // transaccion
+
+            if(validate_transaccion(cuenta1, cuenta2, monto, n)){
+                n++;
+                continue;
+            }
 
             count_operations_loaded_per_hilo[0].count_transacciones++;
 
