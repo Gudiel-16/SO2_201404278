@@ -955,7 +955,7 @@ void menu(){
 
     while (1) {  // Bucle infinito hasta que se elija "Salir"
         // Mostrar el menú
-        printf("\n-------- Menú --------\n");
+        printf("\n------------- Menú --------------\n");
         printf("1. Deposito\n");
         printf("2. Retiro\n");
         printf("3. Transacción\n");
@@ -965,7 +965,7 @@ void menu(){
         printf("7. Salir\n");
 
         // Solicitar la selección de una opción al usuario
-        printf("Ingrese el número de la opción deseada: ");
+        printf("\nIngrese el número de la opción deseada: ");
         if(scanf("%d", &opcion) == 1){
 
             // Manejar la opción seleccionada
@@ -1013,14 +1013,9 @@ int main(){
     int count_hilo_one_and_two = count_total / 3;
     // int count_hilo_three = count_total - (count_hilo_one_and_two * 2);
 
-    // printf("Cantidad: %d\n\n", count_total);
-    // printf("Cantidad1: %d\n\n", count_hilo_one_and_two);
-    // printf("Cantidad2: %d\n\n", count_hilo_one_and_two);
-    // printf("Cantidad3: %d\n\n", count_hilo_three);
-
     read_users(count_total, count_hilo_one_and_two);
-    // generate_report_users();
-    // generate_report_account_status();
+    generate_report_users();
+
     menu();
 
     return 0;
