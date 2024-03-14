@@ -844,7 +844,10 @@ void* thread_read_operations(void* arg){
     pthread_mutex_unlock(&lock_op); // se libere, y se ejecuta el siguiente hilo
 }
 
-void read_users(int count_total, int count_hilo1_y_2){
+void read_users(){
+
+    int count_total = count_users();
+    int count_hilo1_y_2 = count_total / 3;
 
     pthread_mutex_init(&lock, NULL);  // Inicializamos nuestro mutex
 
@@ -960,9 +963,10 @@ void menu(){
         printf("2. Retiro\n");
         printf("3. Transacción\n");
         printf("4. Consultar cuenta\n");
-        printf("5. Carga masiva de operaciones\n");
-        printf("6. Reporte estado de cuenta\n");
-        printf("7. Salir\n");
+        printf("5. Carga masiva de usuarios\n");
+        printf("6. Carga masiva de operaciones\n");
+        printf("7. Reporte estado de cuenta\n");
+        printf("8. Salir\n");
 
         // Solicitar la selección de una opción al usuario
         printf("\nIngrese el número de la opción deseada: ");
@@ -983,13 +987,17 @@ void menu(){
                     check_account();
                     break;
                 case 5:
+                    read_users();
+                    generate_report_users();
+                    break;
+                case 6:
                     read_operations();
                     generate_report_operations();
                     break;
-                case 6:
+                case 7:
                     generate_report_account_status();
                     break;
-                case 7:
+                case 8:
                     printf("\nSALIENDO DEL PROGRAMA. ¡HASTA LUEGO!\n");
                     return;  // Salir del programa
                 default:
@@ -1005,16 +1013,6 @@ void menu(){
 }
 
 int main(){
-
-    // cantidad de usuarios
-    int count_total = count_users();
-
-    // usuarios por hilo
-    int count_hilo_one_and_two = count_total / 3;
-    // int count_hilo_three = count_total - (count_hilo_one_and_two * 2);
-
-    read_users(count_total, count_hilo_one_and_two);
-    generate_report_users();
 
     menu();
 
