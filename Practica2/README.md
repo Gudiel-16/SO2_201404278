@@ -1,6 +1,6 @@
-# Manual Técnico - Practica 1
+# Manual Técnico - Practica 2
 
-* Sistema operativo: Linux Ubuntu 22
+* Sistema operativo: Linux Ubuntu 22.04
 
 ## Variables globales
 
