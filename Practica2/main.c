@@ -9,8 +9,8 @@
 #include <time.h>
 #include <ctype.h>
 
-#define NAME_FILE_USERS "prueba_usuarios.csv"
-#define NAME_FILE_OPERATIONS "prueba_transacciones.csv"
+#define NAME_FILE_USERS "usuarios.csv"
+#define NAME_FILE_OPERATIONS "transacciones.csv"
 #define NAME_FILE_ACCOUNT_STATUS "estado_de_cuenta.csv"
 
 // cantidad de usuarios y errores que se pueden cargar

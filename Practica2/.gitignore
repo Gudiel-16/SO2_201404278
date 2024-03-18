@@ -1,3 +1,7 @@
 main
 *.csv
 *.log
+!usuarios.csv
+!transacciones.csv
+!prueba_usuarios.csv
+!prueba_transacciones.csv
